@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Chernikov_Lab02.Models;
+using Chernikov_Lab02.CustomExceptions;
+using System.Net.Mail;
 
 namespace Chernikov_Lab02.Views
 {
@@ -27,25 +29,25 @@ namespace Chernikov_Lab02.Views
             var day = DatePicker1.SelectedDate.Value.Day;
             var year = DatePicker1.SelectedDate.Value.Year;
             var age = today.Year - year;
-            
 
-            if (DatePicker1.SelectedDate.Value.Date > today.AddYears(-age)) age--;
 
-            if (age <= 0 || age >= 135) // Checking if user's age is between 0 and 135
+            if (DatePicker1.SelectedDate.Value.Date > today.AddYears(-age))
             {
-                MessageBox.Show("Your age is incorrect, pleasy try again");
-                FirstNameTextBlock.Text = "";
-                LastNameTextBlock.Text = "";
-                EmailTextBlock.Text = "";
-                BirthdateTextBlock.Text = "";
-                isAdultTextBlock.Text = "";
-                sunSignTextBlock.Text = "";
-                chZodiacSignTextBlock.Text = "";
-                isBirthdayTextBlock.Text = "";
+                age--;
             }
-
-            else
+            try
             {
+
+                if (age <= 0)
+                {
+                    throw new NotBornYetException("Incorrect Data! You are not born yet!");
+                }
+                else if (age >= 135)
+                {
+                    throw new TooOldToBeAliveException("Incorrect Data! You are already dead!");
+                }
+
+
                 if (day == today.Day && month == today.Month)
                 {
                     if (age == 1)
@@ -62,6 +64,19 @@ namespace Chernikov_Lab02.Views
                 PersonClass._lastName = TbSurname.Text;
                 PersonClass._email = TbEmail.Text;
                 PersonClass._birthdate = selectedDate;
+
+
+                try
+                {
+                    MailAddress Address = new(PersonClass._email);
+
+                }
+                catch (FormatException)
+                {
+                    throw new InvalidEmailException("Incorrect Data! Invalid email");
+
+                }
+
 
                 FirstNameTextBlock.Text = "Your name is : " + PersonClass.FirstName;
                 LastNameTextBlock.Text = "Your surname is : " + PersonClass.LastName;
@@ -80,7 +95,7 @@ namespace Chernikov_Lab02.Views
                 sunSignTextBlock.Text = await Task.Run(() => "Your sun sign is : " + PersonClass.sunSign(selectedDate));
                 chZodiacSignTextBlock.Text = await Task.Run(() => "Your chinese sign is : " + PersonClass.chineseSign(selectedDate));
 
-                if ( await Task.Run(() => PersonClass.isBirthday(selectedDate)))
+                if (await Task.Run(() => PersonClass.isBirthday(selectedDate)))
                 {
                     isBirthdayTextBlock.Text = "Today is your birthday";
                 }
@@ -88,6 +103,10 @@ namespace Chernikov_Lab02.Views
                 {
                     isBirthdayTextBlock.Text = "Today is not your birthday";
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 
